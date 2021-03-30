@@ -386,6 +386,7 @@ void EPD_display_init(void)
 
     EPD_W21_WriteCMD(0x12);
     lcd_chkstatus();
+
     msleep(300000); //wait for fresh display
 
     EPD_W21_WriteCMD(0x82); //to solve Vcom drop

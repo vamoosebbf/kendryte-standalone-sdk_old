@@ -28,7 +28,7 @@ static const char *TAG = "main";
 void epd_test(void)
 {
 
-    EPD_display_init();                      //EPD init
+    EPD_display_init(); //EPD init
     // EPD_full_display(gImage_1, gImage_1, 0); //pic1
     // EPD_deep_sleep();                        //Enter deep sleep mode,This step is a must
     // msleep(1000);

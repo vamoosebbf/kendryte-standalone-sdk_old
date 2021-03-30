@@ -15,10 +15,10 @@
 #include "syslog.h"
 #include "system_config.h"
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-static uint8_t dhcp_get_ip = 0;
+static uint8_t dhcp_ip_assign_fl = 0;
 
 static RIP_MSG dhcp_msg;
-static uint8_t w5500_mac[6] = {0x00, 0x08, 0xdc, 0x11, 0x11, 0x11};
+static uint8_t w5500_mac[6] = {0x02, 0x08, 0xdc, 0x11, 0x11, 0x11};
 
 static const char *TAG = "main";
 
@@ -102,7 +102,7 @@ static void dhcp_ip_assign(void)
     printf("SUB: %d.%d.%d.%d\r\n", sn[0], sn[1], sn[2], sn[3]);
     printf("DNS: %d.%d.%d.%d\r\n", dns[0], dns[1], dns[2], dns[3]);
 
-    dhcp_get_ip = 1;
+    dhcp_ip_assign_fl = 1;
     return;
 }
 
@@ -123,15 +123,15 @@ int main(void)
     //注册回调
     reg_wizchip_cs_cbfunc(eth_w5500_spi_cs_sel, eth_w5500_spi_cs_desel); //注册SPI片选信号函数
     reg_wizchip_spi_cbfunc(eth_w5500_spi_read, eth_w5500_spi_write);     //注册读写函数
-    LOGI(TAG, "%d %s",__LINE__, __FUNCTION__);
+    LOGI(TAG, "%d %s", __LINE__, __FUNCTION__);
     ///////////////////////////////////////////////////////////////////////////
     //设置socket的内存分配大小
     uint8_t memsize[2][8] = {{2, 2, 2, 2, 2, 2, 2, 2}, {2, 2, 2, 2, 2, 2, 2, 2}};
     /* WIZCHIP SOCKET Buffer initialize */
-    if (ctlwizchip(CW_INIT_WIZCHIP, (void *)memsize) == -1)
+    if(ctlwizchip(CW_INIT_WIZCHIP, (void *)memsize) == -1)
     {
         printf("WIZCHIP Initialized fail.\r\n");
-        while (1)
+        while(1)
             ;
     }
     ///////////////////////////////////////////////////////////////////////////
@@ -139,25 +139,43 @@ int main(void)
     /* PHY link status check */
     do
     {
-        if (ctlwizchip(CW_GET_PHYLINK, (void *)&tmp) == -1)
+        if(ctlwizchip(CW_GET_PHYLINK, (void *)&tmp) == -1)
         {
             printf("Unknown PHY Link stauts.\r\n");
         }
-    } while (tmp == PHY_LINK_OFF);
+    } while(tmp == PHY_LINK_OFF);
     ///////////////////////////////////////////////////////////////////////////
 
     reg_dhcp_cbfunc(dhcp_ip_assign, NULL, NULL);
 
-    DHCP_init(0, &dhcp_msg, w5500_mac);
+    DHCP_init(0, &dhcp_msg);
 
-    while (1)
+    int i = 0;
+    for(; i < 20 && !dhcp_ip_assign_fl; i++)
     {
-        uint8_t dhcp_stat = DHCP_run();
 
-        if ((dhcp_stat == DHCP_FAILED) || (dhcp_stat == DHCP_STOPPED))
+        uint8_t dhcp_stat = DHCP_run();
+        if((dhcp_stat == DHCP_FAILED) || (dhcp_stat == DHCP_STOPPED))
         {
-            //失败了。重新来，这里应该加上重试次数判断
-            DHCP_init(0, &dhcp_msg, w5500_mac);
+            DHCP_init(0, &dhcp_msg);
         }
-    };
+        printf("DHCP_run: %d", dhcp_stat);
+        sleep(2);
+    }
+    if(i >= 20)
+        printf("DHCP timeout\r\n");
+
+    // while(1)
+    // {
+    //     uint8_t dhcp_stat = DHCP_run();
+
+    //     if((dhcp_stat == DHCP_FAILED) || (dhcp_stat == DHCP_STOPPED))
+    //     {
+    //         // printf("failed\r\n");
+
+    //         //失败了。重新来，这里应该加上重试次数判断
+    //         DHCP_init(0, &dhcp_msg);
+    //     }
+    //     sleep(2);
+    // };
 }

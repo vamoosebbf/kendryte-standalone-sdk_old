@@ -2,7 +2,7 @@
 #include "fpioa.h"
 #include "gpiohs.h"
 #include "spi.h"
-#include "sx1278.h"
+#include "SX1278.h"
 #include "syslog.h"
 // #include <stdlib.h>
 #include <string.h>
@@ -12,7 +12,7 @@
 
 static const char *TAG = "lora";
 
-void sx1278_hw_init(sx1278_hw_t *hw)
+void sx1278_hw_init()
 {
     LOGD(TAG, "%d|%s", __LINE__, __FUNCTION__);
     fpioa_set_function(SPI_LORA_SX127X_CS_PIN_NUM, FUNC_SPI1_SS0);   // CS
@@ -266,7 +266,7 @@ int sx1278_LoRaEntryTx(sx1278_t *module, uint8_t length, uint32_t timeout)
     sx1278_SPIWrite(module, LR_RegIrqFlagsMask, 0xF7);    //Open TxDone interrupt
     sx1278_SPIWrite(module, LR_RegPayloadLength, length); //RegPayloadLength 21byte
     addr = sx1278_SPIRead(module, LR_RegFifoTxBaseAddr);  //RegFiFoTxBaseAddr
-    LOGD(TAG, "[%d]ADDR:0x%X", __LINE__, addr);
+    LOGD(TAG, "[%d]ADDR:0x%X\r\n", __LINE__, addr);
     sx1278_SPIWrite(module, LR_RegFifoAddrPtr, addr); //RegFifoAddrPtr
 
     while(1)
@@ -336,7 +336,7 @@ void sx1278_begin(sx1278_t *module, uint8_t frequency, uint8_t power,
             break;
         }
         LOGE(TAG, "[ERROR %s()-%d]SPI error, temp:0x%X\r\n", __func__, __LINE__, temp);
-        msleep(1000);
+        msleep(500);
     }
     LOGI(TAG, "SPI CONNECTED\r\n");
     LOGI(TAG, "=============================\r\n");

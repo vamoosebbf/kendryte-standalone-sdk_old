@@ -14,44 +14,94 @@
  */
 #include <bsp.h>
 #include <sysctl.h>
-#include "syslog.h"
-#include "board_config.h"
+#include <sleep.h>
+#include <fpioa.h>
+#include <gpiohs.h>
+#ifndef __CACHE_MEM_H
+#define __CACHE_MEM_H
 
-static const char *TAG = "main";
+#define _IS_IOMEM(x) (!((uint64_t)(&(x))&0x80000000))
+#define _IS_CACHEMEM(x) ((uint64_t)(&(x))&0x80000000)
+#define _IS_IOMEMP(x) (!((uint64_t)(x)&0x80000000))
+#define _IS_CACHEMEMP(x) ((uint64_t)(x)&0x80000000)
+
+#define _IOMEM(x, type) (*(type *)(((uint64_t)&(x))-0x40000000))
+#define _IOMEM_UINT8(x) (*(uint8_t *)(((uint64_t)&(x))-0x40000000))
+#define _IOMEM_ADDR(x) (_IS_IOMEM(x)?(uint64_t)(x):(((uint64_t)&(x))-0x40000000))
+#define _IOMEM_PADDR(p) (_IS_IOMEMP(p)?(uint64_t)(p):(((uint64_t)(p))-0x40000000))
+#define _ADDR(x)	((uint64_t)(x))
+#define _IN_BUF(x, buf)	(_ADDR(x)>=_ADDR(buf) && _ADDR(x)<_ADDR(buf)+sizeof(buf))
+#define CHECK_IOMEM(x) configASSERT(_IS_IOMEM(x))
+#define CHECK_IOMEMP(x) configASSERT(_IS_IOMEMP(x))
+
+#define _CACHE_ADDR(x)                          (_IS_CACHEMEM(x)?(uint64_t)(x):(((uint64_t)&(x))+0x40000000))
+#define _CACHE_PADDR(p)                         (_IS_CACHEMEMP(p)?(uint64_t)(p):(((uint64_t)(p))+0x40000000))
+
+#endif /* __CACHE_MEM_H */
 
 int core1_function(void *ctx)
 {
     uint64_t core = current_coreid();
-    LOGI(TAG, "Core %ld Hello world", core);
+    printf("Core %ld Hello world\n", core);
     while(1);
 }
 
+ void test(uint8_t *a){
+    printf("a+2: %p\r\n", a);
+    printf("a+2: %p\r\n", a);
+    printf("a+2: %p\r\n", a);
+}
+
+void test1(){
+    printf("OutHighLevel\r\n");
+    msleep(10);
+    for(int pin = 0; pin < FPIOA_NUM_IO; pin++){
+        fpioa_set_function(pin,    FUNC_GPIOHS0);
+        gpiohs_set_drive_mode(0, GPIO_DM_OUTPUT);
+        gpiohs_set_pin(0, 1);
+    }
+
+    printf("sleep_3s\r\n");
+    sleep(3);
+
+    printf("out low level\r\n");
+    for(int pin = 0; pin < FPIOA_NUM_IO; pin++){
+        fpioa_set_function(pin,    FUNC_GPIOHS0);
+        gpiohs_set_drive_mode(0, GPIO_DM_OUTPUT);
+        gpiohs_set_pin(0, 0);
+    }
+
+    printf("sleep 3 s\r\n");
+    sleep(3);
+}
+
+void test2(){
+    printf("out high level\r\n");
+    msleep(10);
+    for(int pin = 0; pin < 32; pin++){
+        fpioa_set_function(pin,    FUNC_GPIOHS0 + pin);
+        gpiohs_set_drive_mode(pin, GPIO_DM_OUTPUT);
+        gpiohs_set_pin(pin, 1);
+    }
+    printf("sleep 3 s\r\n");
+    sleep(3);
+    printf("out low level\r\n");
+    sleep(100);
+    for(int pin = 0; pin < 32; pin++){
+        fpioa_set_function(pin,    FUNC_GPIOHS0 + pin);
+        gpiohs_set_drive_mode(pin, GPIO_DM_OUTPUT);
+        gpiohs_set_pin(pin, 0);
+    }
+    printf("sleep 3 s\r\n");
+    sleep(3);
+}
+
+#include "iomem.h"
 int main(void)
 {
-    uint32_t freq = 0;
-    freq = sysctl_pll_set_freq(SYSCTL_PLL0, 800000000);
-    uint64_t core = current_coreid();
-    int data;
-    printk(LOG_COLOR_W "-------------------------------\r\n");
-    printk(LOG_COLOR_W "Sipeed@QinYUN575\r\n");
-    printk(LOG_COLOR_W "Compile@ %s %s\r\n", __DATE__, __TIME__);
-    printk(LOG_COLOR_W "Board: " LOG_COLOR_E BOARD_NAME "\r\n");
-    printk(LOG_COLOR_W "pll freq: %dhz\r\n", freq);
-    printk(LOG_COLOR_W "-------------------------------\r\n");
 
-    LOGI(TAG, "Core %ld Hello world", core);
-    register_core1(core1_function, NULL);
-
-    /* Clear stdin buffer before scanf */
-    sys_stdin_flush();
-
-    scanf("%d", &data);
-    LOGI(TAG, "\r\nData is %d", data);
-    printk(LOG_COLOR_W "-------------END---------------\r\n");
+    test2();
     while(1)
-    {
-         LOGI(TAG, "Hello K210!");
-         msleep(1000);
-    }
+        continue;
     return 0;
 }

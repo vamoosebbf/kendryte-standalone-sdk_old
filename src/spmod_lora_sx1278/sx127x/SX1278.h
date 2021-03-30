@@ -245,7 +245,7 @@ typedef struct
     uint8_t readBytes;
 } sx1278_t;
 
-void sx1278_hw_init(sx1278_hw_t *hw);
+void sx1278_hw_init();
 void sx1278_hw_chip_select(sx1278_hw_t *hw, uint8_t value);
 void sx1278_hw_reset(sx1278_hw_t *hw);
 void sx1278_hw_spi_send_command(sx1278_hw_t *hw, uint8_t cmd);

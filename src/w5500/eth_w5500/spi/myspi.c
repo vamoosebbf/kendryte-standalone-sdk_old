@@ -42,12 +42,11 @@ void eth_w5500_spi_init(void)
     /* init int */
     uint8_t key_dir = 0;
     gpiohs_set_drive_mode(CONFIG_ETH_GPIOHS_INT, GPIO_DM_INPUT_PULL_DOWN);
-    if (key_dir)
+    if(key_dir)
     {
         gpiohs_set_drive_mode(CONFIG_ETH_GPIOHS_INT, GPIO_DM_INPUT_PULL_DOWN);
         gpiohs_set_pin_edge(CONFIG_ETH_GPIOHS_INT, GPIO_PE_RISING);
-    }
-    else
+    } else
     {
         gpiohs_set_drive_mode(CONFIG_ETH_GPIOHS_INT, GPIO_DM_INPUT_PULL_UP);
         gpiohs_set_pin_edge(CONFIG_ETH_GPIOHS_INT, GPIO_PE_FALLING);
@@ -55,7 +54,7 @@ void eth_w5500_spi_init(void)
     gpiohs_irq_register(CONFIG_ETH_GPIOHS_INT, 2, irq_gpiohs, NULL);
 
     spi_init(SPI_DEVICE_1, SPI_WORK_MODE_0, SPI_FF_STANDARD, 8, 0);
-    printf("set spi clk:%d\r\n", spi_set_clk_rate(SPI_DEVICE_1, 1000000 * 8)); /*set clk rate*/
+    printf("set spi clk:%d\r\n", spi_set_clk_rate(SPI_DEVICE_1, 100000 * 6)); /*set clk rate*/
 }
 
 void eth_w5500_reset(uint8_t val)
@@ -117,28 +116,28 @@ static void sipeed_spi_transfer_data_standard(spi_device_num_t spi_num, spi_chip
     spi_handle->ser = 1U << chip_select;
 
     uint32_t i = 0;
-    while (tx_len)
+    while(tx_len)
     {
         fifo_len = 32 - spi_handle->txflr;
         fifo_len = fifo_len < tx_len ? fifo_len : tx_len;
 
         //no switch
-        for (size_t index = 0; index < fifo_len; index++)
+        for(size_t index = 0; index < fifo_len; index++)
             spi_handle->dr[0] = tx_buff[i++];
 
         tx_len -= fifo_len;
     }
-    while ((spi_handle->sr & 0x05) != 0x04)
+    while((spi_handle->sr & 0x05) != 0x04)
         ;
 
     i = 0;
-    while (rx_len)
+    while(rx_len)
     {
         fifo_len = spi_handle->rxflr;
         fifo_len = fifo_len < rx_len ? fifo_len : rx_len;
 
         //no switch
-        for (size_t index = 0; index < fifo_len; index++)
+        for(size_t index = 0; index < fifo_len; index++)
             rx_buff[i++] = (uint8_t)spi_handle->dr[0];
 
         rx_len -= fifo_len;

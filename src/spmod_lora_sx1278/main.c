@@ -23,7 +23,7 @@
 #include "gpiohs.h"
 #include "uarths.h"
 
-#include "sx1278.h"
+#include "SX1278.h"
 
 static const char *TAG = "main";
 
@@ -59,7 +59,8 @@ int main(void)
     // gpiohs_set_pin_edge(GPIO_KEY, GPIO_PE_FALLING);
 
     msleep(1500);
-    uint8_t value = gpiohs_get_pin(GPIO_KEY);
+    // uint8_t value = gpiohs_get_pin(GPIO_KEY);
+    uint8_t value = 1;
     printf("------>   PIN_KEY[%d:%d]\r\n", GPIO_KEY, value);
     if (value)
     {
@@ -100,7 +101,7 @@ void lora_test(uint8_t master)
             LOGD(TAG, "Master ...");
             msleep(2500);
 
-            message_length = sprintf(buffer, "Hello %d", message);
+            message_length = sprintf(buffer, "Hello %d\r\n", message);
             ret = sx1278_LoRaEntryTx(&SX1278, message_length, 2000);
             LOGD(TAG, "Sending package[Entry: %d]...", ret);
 
@@ -117,13 +118,13 @@ void lora_test(uint8_t master)
             msleep(1000);
 
             ret = sx1278_LoRaRxPacket(&SX1278);
-            LOGD(TAG, "Receiving package[Received: %d]...", ret);
+            LOGD(TAG, "Receiving package[Received: %d]...\r\n", ret);
             if (ret > 0)
             {
                 sx1278_read(&SX1278, (uint8_t *)buffer, ret);
-                LOGI(TAG, "Content (%d): " LOG_RESET_COLOR LOG_COLOR_BROWN "\r\n%s" LOG_RESET_COLOR "\r\n", ret, buffer);
+                LOGI(TAG, "Content (%d): \r\n" LOG_RESET_COLOR LOG_COLOR_BROWN "\r\n%s" LOG_RESET_COLOR "\r\n", ret, buffer);
             }
-            LOGD(TAG, "Package received ...");
+            LOGD(TAG, "Package received ...\r\n");
         }
         /* USER CODE END WHILE */
 
